@@ -21,7 +21,6 @@ const char* ssid     = "            ";
 const char* password = "      ";
 WebServer server(80);
 
-// Synchronization Variables
 String songTitle = "No Track";
 String artistName = "Unknown Artist";
 String currentLyricLine = "Waiting for sync...";
@@ -30,13 +29,11 @@ unsigned long lastUpdate = 0;
 bool isPlaying = false;
 bool needToFetchLyrics = false;
 
-// Storage structure for parsing structured LRC time arrays
 const int MAX_LINES = 60; 
 long lineTimes[MAX_LINES];
 String lineText[MAX_LINES];
 int totalLines = 0;
 
-// Visualizer Globals
 const int numBars = 8;
 int barWidth = 12;
 int barSpacing = 4;
@@ -45,7 +42,6 @@ int targetHeights[numBars] = {0};
 
 TaskHandle_t FetchTask;
 
-// Helper function to turn timestamp strings "[01:23.45]" into raw millisecond numbers
 long parseLrcTime(String timeStr) {
   if(timeStr.length() < 7) return 0;
   int min = timeStr.substring(1, 3).toInt();
@@ -54,7 +50,6 @@ long parseLrcTime(String timeStr) {
   return (min * 60000) + (sec * 1000) + ms;
 }
 
-// Background network processor on Core 0
 void FetchTaskCode(void * pvParameters) {
   for(;;) {
     server.handleClient();
@@ -68,21 +63,19 @@ void FetchTaskCode(void * pvParameters) {
         queryTitle.replace(" ", "%20");
         queryArtist.replace(" ", "%20");
         
-        // Pinging the free Open-LRC Library database engine
         String url = "https://lrclib.net/api/search?q=" + queryArtist + "%20" + queryTitle;
         http.begin(url);
         
         int httpCode = http.GET();
         if (httpCode == 200) {
           String payload = http.getString();
-          DynamicJsonDocument doc(8192); // Large buffer for parsing heavy database structures
+          DynamicJsonDocument doc(8192); 
           DeserializationError error = deserializeJson(doc, payload);
           
           if (!error && doc.isArray() && doc.size() > 0) {
             String syncedLyrics = doc[0]["syncedLyrics"].as<String>();
             totalLines = 0;
             
-            // Loop break down to cut the raw layout string into distinct dynamic lines
             int startIdx = 0;
             while (startIdx < syncedLyrics.length() && totalLines < MAX_LINES) {
               int endIdx = syncedLyrics.indexOf('\n', startIdx);
@@ -115,7 +108,7 @@ void handleUpdate() {
     String newTitle = server.arg("title");
     if(newTitle != songTitle) {
       songTitle = newTitle;
-      needToFetchLyrics = true; // New track detected, request a new LRC download sequence
+      needToFetchLyrics = true; 
     }
     isPlaying = true;
     lastUpdate = millis();
@@ -177,17 +170,14 @@ void setup() {
 void loop() {
   if (millis() - lastUpdate > 8000) isPlaying = false;
 
-  // Visualizer execution window (Locked 30 FPS Frame processing)
   static unsigned long lastFrame = 0;
   if (millis() - lastFrame > 33) { 
     lastFrame = millis();
     drawVisualizer();
   }
 
-  // Real-Time Time Sync Matching Processor Loop
   if (isPlaying && totalLines > 0) {
     String targetLine = "";
-    // Step through the timestamps array to find the line matching the phone's position
     for (int i = 0; i < totalLines; i++) {
       if (trackPositionMs >= lineTimes[i]) {
         targetLine = lineText[i];
@@ -196,7 +186,7 @@ void loop() {
       }
     }
     
-    // If the lyric line has advanced, refresh only the 1.3" display unit
+   
     if (targetLine != currentLyricLine && targetLine != "") {
       currentLyricLine = targetLine;
       
@@ -204,7 +194,7 @@ void loop() {
       display_130.setTextColor(SH110X_WHITE);
       display_130.setTextWrap(true);
       display_130.setCursor(0, 16);
-      display_130.setTextSize(2); // Large text for clear readability
+      display_130.setTextSize(2); 
       display_130.println(currentLyricLine);
       display_130.display();
     }
