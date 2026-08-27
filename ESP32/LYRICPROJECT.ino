@@ -17,8 +17,8 @@
 Adafruit_SSD1306 display_096(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
 Adafruit_SH1106G display_130(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire1, -1);
 
-const char* ssid     = "JioFiberThann";
-const char* password = "Nivas@2006";
+const char* ssid     = "            ";
+const char* password = "      ";
 WebServer server(80);
 
 // Synchronization Variables
